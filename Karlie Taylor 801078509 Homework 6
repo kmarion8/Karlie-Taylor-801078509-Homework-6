@@ -1,0 +1,510 @@
+#Problem 1
+
+#Part A
+#Import necessary libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
+import time
+
+#Load the dataset
+url = "https://raw.githubusercontent.com/HamedTabkhi/Intro-to-ML/main/Dataset/Housing.csv"
+housing_data = pd.read_csv(url)
+
+#Preprocess the dataset
+#Convert categorical features to numeric 
+housing_data = pd.get_dummies(housing_data, drop_first=True)
+
+#Separate features and target variable
+X = housing_data.drop("price", axis=1)
+y = housing_data["price"]
+
+#Standardize the dataset
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+#Split the dataset into training and validation sets (80/20 split)
+X_train, X_val, y_train, y_val = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+#Build the neural network
+model = Sequential([
+    Dense(8, activation='relu', input_dim=X_train.shape[1]),
+    Dense(1)  
+])
+
+#Compile the model
+model.compile(optimizer=Adam(learning_rate=0.01), loss='mean_squared_error', metrics=['mean_absolute_error'])
+
+#Train the model
+start_time = time.time()
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+history = model.fit(
+    X_train, y_train,
+    validation_data=(X_val, y_val),
+    epochs=20,  
+    batch_size=32,
+    callbacks=[early_stopping],
+    verbose=1
+)
+training_time = time.time() - start_time
+
+#Evaluate model
+loss, mae = model.evaluate(X_val, y_val, verbose=0)
+
+#Print results
+print(f"Training Time: {training_time:.2f} seconds")
+print(f"Final Training Loss: {history.history['loss'][-1]:.4f}")
+print(f"Validation Loss: {loss:.4f}")
+print(f"Validation Mean Absolute Error: {mae:.4f}")
+
+#Part B
+#Import necessary libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import mean_squared_error
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import time
+
+#Load dataset
+url = "https://raw.githubusercontent.com/HamedTabkhi/Intro-to-ML/main/Dataset/Housing.csv"
+data = pd.read_csv(url)
+
+#Handle categorical data by encoding it
+for column in data.select_dtypes(include=['object']).columns:
+    encoder = LabelEncoder()
+    data[column] = encoder.fit_transform(data[column])
+
+#Split features and target
+X = data.iloc[:, :-1].values  
+y = data.iloc[:, -1].values  
+
+#Standardize the dataset
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+#Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+#Define neural network with additional hidden layers
+model = Sequential([
+    Dense(64, activation='relu', input_dim=X_train.shape[1]), 
+    Dense(128, activation='relu'),  
+    Dense(128, activation='relu'),  
+    Dense(64, activation='relu'),  
+    Dense(1, activation='linear')  
+])
+
+#Compile model
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+
+#Train model
+start_time = time.time()
+history = model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.2, verbose=1)
+training_time = time.time() - start_time
+
+#Evaluate model
+train_loss, train_mae = model.evaluate(X_train, y_train, verbose=0)
+test_loss, test_mae = model.evaluate(X_test, y_test, verbose=0)
+
+#Predictions
+y_pred = model.predict(X_test)
+
+#Analysis
+mse = mean_squared_error(y_test, y_pred)
+print(f"Training Time: {training_time:.2f} seconds")
+print(f"Training Loss (MSE): {train_loss:.2f}")
+print(f"Test Loss (MSE): {test_loss:.2f}")
+print(f"Evaluation Mean Absolute Error (MAE): {test_mae:.2f}")
+print(f"Test Mean Squared Error (MSE): {mse:.2f}")
+
+#Save summary
+model.summary()
+
+#Problem 2
+
+#Part A
+#Import necessary libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import accuracy_score
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import time
+from sklearn.datasets import load_breast_cancer
+
+#Cancer dataset
+data = load_breast_cancer()
+X = data.data  
+y = data.target  
+
+#Standardize the dataset
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+#Split into training and validation sets (80% training, 20% validation)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+#Define neural network with one hidden layer of 32 nodes
+model = Sequential([
+    Dense(32, activation='relu', input_dim=X_train.shape[1]), 
+    Dense(1, activation='sigmoid')  
+])
+
+#Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+#Train the model
+start_time = time.time()
+history = model.fit(X_train, y_train, epochs=20, batch_size=32, validation_data=(X_val, y_val), verbose=1)
+training_time = time.time() - start_time
+
+#Evaluate the model
+train_loss, train_accuracy = model.evaluate(X_train, y_train, verbose=0)
+val_loss, val_accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+# Make predictions on the validation set
+y_pred = (model.predict(X_val) > 0.5).astype("int32")
+
+# Analysis
+accuracy = accuracy_score(y_val, y_pred)
+print(f"Training Time: {training_time:.2f} seconds")
+print(f"Training Loss: {train_loss:.4f}")
+print(f"Training Accuracy: {train_accuracy:.4f}")
+print(f"Validation Loss: {val_loss:.4f}")
+print(f"Validation Accuracy: {val_accuracy:.4f}")
+print(f"Validation Accuracy (from sklearn): {accuracy:.4f}")
+
+#Save summary
+model.summary()
+
+#Plot training and validation loss and accuracy
+import matplotlib.pyplot as plt
+
+#Plot Loss
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Loss Over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+#Plot Accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Accuracy Over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+#Part B
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import accuracy_score, classification_report
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import time
+import os
+import matplotlib.pyplot as plt
+
+#Dataset URL
+url = "https://raw.githubusercontent.com/HamedTabkhi/Intro-to-ML/main/Classifier/CancerDataset.csv"
+
+   #Load the dataset from the URL
+    data = pd.read_csv(url)
+    print("Loaded dataset from URL")
+except Exception as e:
+    print(f"Error loading dataset from URL: {e}")
+    #If URL fails, attempt to load the dataset from a local file
+    local_file = "CancerDataset.csv"  
+    if os.path.exists(local_file):
+        data = pd.read_csv(local_file)
+        print(f"Loaded dataset from local file: {local_file}")
+    else:
+        raise FileNotFoundError("Dataset not found at the URL or locally.")
+
+#Handle missing data (if any)
+data = data.dropna()
+
+#Handle categorical data by encoding it
+for column in data.select_dtypes(include=['object']).columns:
+    encoder = LabelEncoder()
+    data[column] = encoder.fit_transform(data[column])
+
+#Split features and target
+X = data.iloc[:, :-1].values  
+y = data.iloc[:, -1].values  
+
+#Standardize the dataset
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+#Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+#Define the neural network with additional hidden layers
+model = Sequential([
+    Dense(64, activation='relu', input_dim=X_train.shape[1]),  
+    Dense(128, activation='relu'),  
+    Dense(128, activation='relu'),  
+    Dense(64, activation='relu'),  
+    Dense(1, activation='sigmoid')  
+])
+
+#Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+#Train the model
+start_time = time.time()
+history = model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.2, verbose=1)
+training_time = time.time() - start_time
+
+#Evaluate the model
+train_loss, train_accuracy = model.evaluate(X_train, y_train, verbose=0)
+test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
+
+#Predictions
+y_pred_prob = model.predict(X_test)
+y_pred = (y_pred_prob > 0.5).astype(int).flatten()
+
+#Analysis
+print(f"Training Time: {training_time:.2f} seconds")
+print(f"Training Loss: {train_loss:.2f}")
+print(f"Training Accuracy: {train_accuracy:.2f}")
+print(f"Test Loss: {test_loss:.2f}")
+print(f"Test Accuracy: {test_accuracy:.2f}")
+
+#Classification Report
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+#Save summary of the model architecture
+model.summary()
+
+#Loss plot
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+#Accuracy plot
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+#Problem 3
+
+#Part A
+#Import necessary libraries
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.utils import to_categorical
+import time
+import matplotlib.pyplot as plt
+
+#Load CIFAR-10 dataset
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+#Normalize the pixel values to [0, 1] range
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+
+#One-hot encode the labels
+y_train = to_categorical(y_train, num_classes=10)
+y_test = to_categorical(y_test, num_classes=10)
+
+#Define the neural network
+model = Sequential([
+    Flatten(input_shape=(32, 32, 3)),  
+    Dense(256, activation='relu'),  
+    Dense(10, activation='softmax')  
+])
+
+#Compile the model
+model.compile(optimizer='adam',
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+#Train the model
+start_time = time.time()
+history = model.fit(x_train, y_train, epochs=100, batch_size=64, validation_split=0.2, verbose=1)
+training_time = time.time() - start_time
+
+#Evaluate the model
+train_loss, train_accuracy = model.evaluate(x_train, y_train, verbose=0)
+test_loss, test_accuracy = model.evaluate(x_test, y_test, verbose=0)
+
+#Report results
+print(f"Training Time: {training_time:.2f} seconds")
+print(f"Training Loss: {train_loss:.4f}")
+print(f"Training Accuracy: {train_accuracy:.4f}")
+print(f"Test Loss: {test_loss:.4f}")
+print(f"Test Accuracy: {test_accuracy:.4f}")
+
+#Save summary
+model.summary()
+
+
+#Loss plot
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+#Accuracy plot
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+#Part B
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import accuracy_score, classification_report
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import time
+import os
+import matplotlib.pyplot as plt
+
+#Dataset URL
+url = "https://raw.githubusercontent.com/HamedTabkhi/Intro-to-ML/main/Dataset/Social_Network_Ads.csv"
+
+try:
+    #Try to load the dataset from the URL
+    data = pd.read_csv(url)
+    print("Loaded dataset from URL")
+except Exception as e:
+    print(f"Error loading dataset from URL: {e}")
+    #If URL fails, attempt to load the dataset from a local file
+    local_file = "Social_Network_Ads.csv"  
+    if os.path.exists(local_file):
+        data = pd.read_csv(local_file)
+        print(f"Loaded dataset from local file: {local_file}")
+    else:
+        raise FileNotFoundError("Dataset not found at the URL or locally.")
+
+#Handle missing data (if any)
+data = data.dropna()
+
+#Handle categorical data by encoding it
+for column in data.select_dtypes(include=['object']).columns:
+    encoder = LabelEncoder()
+    data[column] = encoder.fit_transform(data[column])
+
+#Split features and target
+X = data.iloc[:, :-1].values  
+y = data.iloc[:, -1].values  
+
+#Standardize the dataset
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+#Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+#Define the neural network with additional hidden layers
+model = Sequential([
+    Dense(64, activation='relu', input_dim=X_train.shape[1]),  # Input layer
+    Dense(128, activation='relu'),  # Additional hidden layer 1
+    Dense(128, activation='relu'),  # Additional hidden layer 2
+    Dense(64, activation='relu'),  # Additional hidden layer 3
+    Dense(1, activation='sigmoid')  # Output layer (binary classification)
+])
+
+#Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+#Train the model
+start_time = time.time()
+history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_split=0.2, verbose=1)
+training_time = time.time() - start_time
+
+#Evaluate the model
+train_loss, train_accuracy = model.evaluate(X_train, y_train, verbose=0)
+test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
+
+#Predictions
+y_pred_prob = model.predict(X_test)
+y_pred = (y_pred_prob > 0.5).astype(int).flatten()
+
+#Analysis
+print(f"Training Time: {training_time:.2f} seconds")
+print(f"Training Loss: {train_loss:.2f}")
+print(f"Training Accuracy: {train_accuracy:.2f}")
+print(f"Test Loss: {test_loss:.2f}")
+print(f"Test Accuracy: {test_accuracy:.2f}")
+
+#Classification Report
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+#Save summary of model architecture
+model.summary()
+
+#Plotting training history (loss and accuracy)
+
+#Loss plot
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+#Accuracy plot
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
